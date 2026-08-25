@@ -50,9 +50,9 @@
   <rect x="190" y="368" width="278" height="36" rx="6" class="input"/>
   <text x="206" y="391" class="small">请选择...</text>
   <path d="M444 382 l8 8 8-8" fill="none" stroke="#66758a" stroke-width="2"/>
-  <text x="96" y="436" class="text">误差列</text>
+  <text x="96" y="436" class="text">误差模式</text>
   <rect x="190" y="414" width="278" height="36" rx="6" class="input"/>
-  <text x="206" y="437" class="small">无</text>
+  <text x="206" y="437" class="small">无 / CSV误差列 / 统一误差值</text>
   <path d="M444 428 l8 8 8-8" fill="none" stroke="#66758a" stroke-width="2"/>
   <line x1="96" y1="470" x2="468" y2="470" stroke="#dce3ec"/>
 
@@ -64,7 +64,7 @@
   <text x="96" y="584" class="text">阶次</text>
   <rect x="190" y="562" width="92" height="36" rx="6" class="input"/>
   <text x="206" y="585" class="small">2</text>
-  <text x="300" y="584" class="small">仅多项式显示（1～10）</text>
+  <text x="300" y="584" class="small">1～10；6阶以上提示风险</text>
   <text x="96" y="630" class="text">参数</text>
   <rect x="190" y="608" width="278" height="72" rx="6" class="input"/>
   <text x="206" y="633" class="small">a0: 0.0　a1: 1.0</text>
