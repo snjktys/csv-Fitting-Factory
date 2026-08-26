@@ -1,0 +1,18 @@
+# Python 缓存和编译文件
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+htmlcov/
+
+# 虚拟环境和编辑器本地文件
+.venv/
+venv/
+.idea/
+
+# 程序生成内容
+output/
+*.log
+
+# 项目临时文件（保留目录本身不重要）
+tmp/
