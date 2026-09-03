@@ -75,7 +75,7 @@ python -m src.main
 python -m pytest -q
 ```
 
-当前版本自动化测试结果为 `27 passed`。测试报告位于 `docs/测试报告.md`。
+当前版本自动化测试结果为 `46 passed`，包含固定示例、随机数据和异常 CSV 场景。测试报告位于 `docs/测试报告.md`。
 
 ## 八、项目结构
 
@@ -90,6 +90,8 @@ csv-Fitting-Factory/
 ├─ requirements.txt       # Python 依赖
 └─ .gitignore             # Git 忽略规则
 ```
+
+`tests/test_data` 中保存了本轮随机和异常测试文件，可以直接用 GUI 打开复测。
 
 ## 九、常见问题
 
