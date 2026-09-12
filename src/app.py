@@ -12,8 +12,14 @@ import tkinter as tk
 from pathlib import Path
 from tkinter import filedialog, messagebox, ttk
 
+import matplotlib as mpl
 import numpy as np
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
+from matplotlib import widgets
+from matplotlib.backends.backend_tkagg import (
+    FigureCanvasTkAgg,
+    NavigationToolbar2Tk as MatplotlibNavigationToolbar2Tk,
+)
+from matplotlib.figure import Figure
 
 from .csv_handler import load_csv
 from .data_processor import prepare_data
@@ -36,6 +42,87 @@ ERROR_DISPLAY_TO_KEY = {
     "CSV 误差列": "column",
     "统一误差值": "constant",
 }
+
+
+class ChineseSubplotTool(widgets.SubplotTool):
+    """显示中文标签且保留英文内部参数键的子图配置工具。"""
+
+    _parameter_names = ("left", "bottom", "right", "top", "wspace", "hspace")
+    _parameter_labels = ("左边距", "下边距", "右边距", "上边距", "水平间距", "垂直间距")
+
+    def __init__(self, targetfig: Figure, toolfig: Figure) -> None:
+        super().__init__(targetfig, toolfig)
+        toolfig.suptitle("拖动滑块调整子图布局")
+        for slider, label in zip(
+            self._sliders, self._parameter_labels, strict=True
+        ):
+            slider.label.set_text(label)
+        self.buttonreset.label.set_text("重置")
+
+    def _on_slider_changed(self, _) -> None:
+        """使用固定参数键更新布局，避免中文标签影响 Matplotlib 调用。"""
+
+        self.targetfig.subplots_adjust(
+            **dict(
+                zip(
+                    self._parameter_names,
+                    (slider.val for slider in self._sliders),
+                    strict=True,
+                )
+            )
+        )
+        if self.drawon:
+            self.targetfig.canvas.draw()
+
+
+class ChineseNavigationToolbar2Tk(MatplotlibNavigationToolbar2Tk):
+    """使用中文工具提示的 Matplotlib 导航工具栏。"""
+
+    toolitems = (
+        ("Home", "恢复初始视图", "home", "home"),
+        ("Back", "返回上一个视图", "back", "back"),
+        ("Forward", "前进到下一个视图", "forward", "forward"),
+        (None, None, None, None),
+        (
+            "Pan",
+            "平移：左键拖动，右键缩放；\nX/Y 固定坐标轴，Ctrl 固定纵横比",
+            "move",
+            "pan",
+        ),
+        (
+            "Zoom",
+            "矩形缩放：拖动矩形区域；\nX/Y 固定坐标轴",
+            "zoom_to_rect",
+            "zoom",
+        ),
+        ("Subplots", "配置子图", "subplots", "configure_subplots"),
+        (None, None, None, None),
+        ("Save", "保存图像", "filesave", "save_figure"),
+    )
+
+    def configure_subplots(self, *args):
+        """打开中文子图配置窗口。"""
+
+        if hasattr(self, "subplot_tool"):
+            self.subplot_tool.figure.canvas.manager.show()
+            return self.subplot_tool
+        with mpl.rc_context({"toolbar": "none"}):
+            manager = type(self.canvas).new_manager(Figure(figsize=(6, 3)), -1)
+        manager.set_window_title("子图布局配置")
+        tool_fig = manager.canvas.figure
+        tool_fig.subplots_adjust(top=0.9)
+        self.subplot_tool = ChineseSubplotTool(self.canvas.figure, tool_fig)
+        connection_id = self.canvas.mpl_connect(
+            "close_event", lambda _event: manager.destroy()
+        )
+
+        def on_tool_fig_close(_event) -> None:
+            self.canvas.mpl_disconnect(connection_id)
+            del self.subplot_tool
+
+        tool_fig.canvas.mpl_connect("close_event", on_tool_fig_close)
+        manager.show()
+        return self.subplot_tool
 
 
 class FittingFactoryApp:
@@ -73,6 +160,7 @@ class FittingFactoryApp:
         self.rmse_var = tk.StringVar(value="RMSE：--")
         self.status_var = tk.StringVar()
         self.row_info_var = tk.StringVar(value="有效数据：--　删除数据：--")
+        self.formula_var = tk.StringVar(value="")
 
     def _configure_style(self) -> None:
         """设置简洁统一的 ttk 外观。"""
@@ -83,6 +171,9 @@ class FittingFactoryApp:
         style.configure("Title.TLabel", font=("Microsoft YaHei UI", 18, "bold"))
         style.configure("Section.TLabelframe.Label", font=("Microsoft YaHei UI", 11, "bold"))
         style.configure("Primary.TButton", font=("Microsoft YaHei UI", 10, "bold"), padding=7)
+        # 两个主要操作按钮必须使用相同的字体和内边距，避免 ttk 默认样式
+        # 与强调样式在不同 Windows 主题下出现高度、字号不一致。
+        style.configure("Action.TButton", font=("Microsoft YaHei UI", 10, "bold"), padding=7)
         style.configure("Status.TLabel", padding=(8, 5))
 
     def _build_menu(self) -> None:
@@ -103,14 +194,82 @@ class FittingFactoryApp:
     def _build_layout(self) -> None:
         """创建左侧控制面板、右侧图表和底部状态栏。"""
 
+        # 先固定底部状态栏，再让主内容区 expand；否则主内容会先占满
+        # 整个窗口，状态栏在小窗口下会被 pack 成 1 像素而看不见。
+        status_frame = ttk.Frame(self.root)
+        status_frame.pack(fill=tk.X, side=tk.BOTTOM)
+        ttk.Separator(status_frame).pack(fill=tk.X)
+        ttk.Label(
+            status_frame, textvariable=self.status_var, style="Status.TLabel"
+        ).pack(side=tk.LEFT)
+        ttk.Label(
+            status_frame, textvariable=self.row_info_var, style="Status.TLabel"
+        ).pack(side=tk.RIGHT)
+
         main = ttk.Frame(self.root, padding=10)
         main.pack(fill=tk.BOTH, expand=True)
         main.columnconfigure(1, weight=1)
         main.rowconfigure(0, weight=1)
 
-        controls = ttk.Frame(main, width=360)
-        controls.grid(row=0, column=0, sticky="nsw", padx=(0, 10))
-        controls.grid_propagate(False)
+        # 左侧控制区使用独立滚动画布。参数行较多时只滚动左侧内容，
+        # 右侧图表和底部状态栏保持固定，不会被参数区挤出窗口。
+        controls_pane = ttk.Frame(main, width=360)
+        controls_pane.grid(row=0, column=0, sticky="nsew", padx=(0, 10))
+        controls_pane.grid_propagate(False)
+        controls_pane.columnconfigure(0, weight=1)
+        controls_pane.rowconfigure(0, weight=1)
+        controls_canvas = tk.Canvas(controls_pane, highlightthickness=0, borderwidth=0)
+        controls_canvas.grid(row=0, column=0, sticky="nsew")
+        self.controls_canvas = controls_canvas
+        controls_scrollbar = ttk.Scrollbar(
+            controls_pane, orient=tk.VERTICAL, command=controls_canvas.yview
+        )
+        controls_scrollbar.grid(row=0, column=1, sticky="ns")
+        self.controls_scrollbar = controls_scrollbar
+        self._controls_scrollable = False
+        controls_canvas.configure(yscrollcommand=controls_scrollbar.set)
+        controls = ttk.Frame(controls_canvas)
+        controls_window = controls_canvas.create_window((0, 0), window=controls, anchor="nw")
+
+        self._controls_wheel_tag = "FittingFactoryControlsWheel"
+        self.root.bind_class(
+            self._controls_wheel_tag,
+            "<MouseWheel>",
+            self._on_controls_mousewheel,
+        )
+        self.root.bind_class(
+            self._controls_wheel_tag,
+            "<Button-4>",
+            self._on_controls_mousewheel,
+        )
+        self.root.bind_class(
+            self._controls_wheel_tag,
+            "<Button-5>",
+            self._on_controls_mousewheel,
+        )
+
+        def update_controls_scrollregion(_event=None) -> None:
+            bbox = controls_canvas.bbox("all")
+            if not bbox:
+                return
+            controls_canvas.configure(scrollregion=bbox)
+            content_height = bbox[3] - bbox[1]
+            viewport_height = controls_canvas.winfo_height()
+            self._controls_scrollable = content_height > viewport_height + 1
+            if self._controls_scrollable:
+                if not controls_scrollbar.winfo_ismapped():
+                    controls_scrollbar.grid(row=0, column=1, sticky="ns")
+            else:
+                # 全屏或大窗口时内容完全可见，不显示多余滚动条，也不移动 Canvas。
+                controls_scrollbar.grid_remove()
+                controls_canvas.yview_moveto(0)
+
+        def resize_controls_content(event) -> None:
+            controls_canvas.itemconfigure(controls_window, width=event.width)
+            controls_canvas.after_idle(update_controls_scrollregion)
+
+        controls.bind("<Configure>", update_controls_scrollregion)
+        controls_canvas.bind("<Configure>", resize_controls_content)
 
         chart_frame = ttk.Frame(main)
         chart_frame.grid(row=0, column=1, sticky="nsew")
@@ -121,25 +280,18 @@ class FittingFactoryApp:
         self._build_column_section(controls)
         self._build_model_section(controls)
         self._build_result_section(controls)
+        self._install_controls_wheel_binding(controls_pane)
 
         self.figure = create_figure()
         self.canvas = FigureCanvasTkAgg(self.figure, master=chart_frame)
         self.canvas.get_tk_widget().grid(row=0, column=0, sticky="nsew")
         toolbar_frame = ttk.Frame(chart_frame)
         toolbar_frame.grid(row=1, column=0, sticky="ew")
-        self.toolbar = NavigationToolbar2Tk(self.canvas, toolbar_frame, pack_toolbar=False)
+        self.toolbar = ChineseNavigationToolbar2Tk(
+            self.canvas, toolbar_frame, pack_toolbar=False
+        )
         self.toolbar.update()
         self.toolbar.pack(side=tk.LEFT)
-
-        status_frame = ttk.Frame(self.root)
-        status_frame.pack(fill=tk.X, side=tk.BOTTOM)
-        ttk.Separator(status_frame).pack(fill=tk.X)
-        ttk.Label(
-            status_frame, textvariable=self.status_var, style="Status.TLabel"
-        ).pack(side=tk.LEFT)
-        ttk.Label(
-            status_frame, textvariable=self.row_info_var, style="Status.TLabel"
-        ).pack(side=tk.RIGHT)
 
     def _build_file_section(self, parent: ttk.Frame) -> None:
         section = ttk.LabelFrame(parent, text="1  数据文件", style="Section.TLabelframe", padding=10)
@@ -205,7 +357,7 @@ class FittingFactoryApp:
             style="Section.TLabelframe",
             padding=10,
         )
-        section.pack(fill=tk.BOTH, expand=True, pady=(0, 8))
+        section.pack(fill=tk.X, pady=(0, 8))
         section.columnconfigure(1, weight=1)
 
         ttk.Label(section, text="模型").grid(row=0, column=0, sticky="w", pady=3)
@@ -232,19 +384,29 @@ class FittingFactoryApp:
         self.degree_spinbox.bind("<FocusOut>", self._on_model_changed)
         self.degree_spinbox.bind("<Return>", self._on_model_changed)
 
-        ttk.Label(section, text="参数").grid(row=2, column=0, sticky="nw", pady=(6, 3))
+        ttk.Label(section, text="公式").grid(row=2, column=0, sticky="nw", pady=(6, 3))
+        ttk.Label(
+            section,
+            textvariable=self.formula_var,
+            wraplength=300,
+            justify=tk.LEFT,
+            foreground="#5f6b7a",
+        ).grid(row=2, column=1, sticky="w", padx=(8, 0), pady=(6, 3))
+
+        ttk.Label(section, text="参数").grid(row=3, column=0, sticky="nw", pady=(6, 3))
         self.parameter_frame = ttk.Frame(section)
-        self.parameter_frame.grid(row=2, column=1, sticky="ew", padx=(8, 0), pady=(6, 3))
+        self.parameter_frame.grid(row=3, column=1, sticky="ew", padx=(8, 0), pady=(6, 3))
         self.parameter_frame.columnconfigure(1, weight=1)
 
         button_frame = ttk.Frame(section)
-        button_frame.grid(row=3, column=0, columnspan=2, sticky="ew", pady=(10, 0))
+        button_frame.grid(row=4, column=0, columnspan=2, sticky="ew", pady=(10, 0))
         button_frame.columnconfigure((0, 1), weight=1)
         self.guess_button = ttk.Button(
             button_frame,
             text="智能初值",
             command=self.use_smart_initial_guess,
             state="disabled",
+            style="Action.TButton",
         )
         self.guess_button.grid(row=0, column=0, sticky="ew", padx=(0, 4))
         self.fit_button = ttk.Button(
@@ -252,7 +414,7 @@ class FittingFactoryApp:
             text="开始拟合",
             command=self.run_fitting,
             state="disabled",
-            style="Primary.TButton",
+            style="Action.TButton",
         )
         self.fit_button.grid(row=0, column=1, sticky="ew", padx=(4, 0))
 
@@ -272,6 +434,33 @@ class FittingFactoryApp:
             state="disabled",
         )
         self.report_button.pack(fill=tk.X, pady=(8, 0))
+
+    def _install_controls_wheel_binding(self, widget: tk.Misc) -> None:
+        """给左侧控件添加优先级滚轮绑定，避免 Combobox 改变选项。"""
+
+        tags = widget.bindtags()
+        if self._controls_wheel_tag not in tags:
+            widget.bindtags((self._controls_wheel_tag, *tags))
+        for child in widget.winfo_children():
+            self._install_controls_wheel_binding(child)
+
+    def _on_controls_mousewheel(self, event) -> str:
+        """统一滚动左侧控制区，并阻止控件默认的滚轮行为。"""
+
+        if event.num == 4:
+            units = -1
+        elif event.num == 5:
+            units = 1
+        else:
+            delta = getattr(event, "delta", 0)
+            units = -int(delta / 120) if delta else 0
+            if units == 0 and delta:
+                units = -1 if delta > 0 else 1
+        if units:
+            if self._controls_scrollable:
+                self.controls_canvas.yview_scroll(units, "units")
+        # 必须返回 break，阻止 ttk.Combobox/Spinbox 继续处理同一个滚轮事件。
+        return "break"
 
     def open_csv(self) -> None:
         """让用户选择 CSV，并把列名加载到界面。"""
@@ -339,6 +528,7 @@ class FittingFactoryApp:
             spec = get_model_spec(model_key, degree)
         except FittingFactoryError:
             return
+        self.formula_var.set(spec.formula)
         for widget in self.parameter_frame.winfo_children():
             widget.destroy()
         self.parameter_entries.clear()
@@ -346,15 +536,24 @@ class FittingFactoryApp:
         if default_values:
             default_values[0] = 1.0
         parameter_defaults = zip(
-            spec.parameter_names, default_values, strict=True
+            spec.parameter_names,
+            spec.parameter_descriptions,
+            default_values,
+            strict=True,
         )
-        for row, (name, default) in enumerate(parameter_defaults):
-            ttk.Label(self.parameter_frame, text=name).grid(row=row, column=0, sticky="w", pady=2)
+        for row, (name, description, default) in enumerate(parameter_defaults):
+            ttk.Label(
+                self.parameter_frame,
+                text=f"{name}（{description}）",
+                wraplength=190,
+                justify=tk.LEFT,
+            ).grid(row=row, column=0, sticky="w", pady=2)
             entry = ttk.Entry(self.parameter_frame)
             entry.insert(0, f"{default:g}")
             entry.grid(row=row, column=1, sticky="ew", padx=(6, 0), pady=2)
             entry.bind("<KeyRelease>", self._on_configuration_changed)
             self.parameter_entries[name] = entry
+        self._install_controls_wheel_binding(self.parameter_frame)
         self._invalidate_result("模型或参数已改变，需要重新拟合。")
 
     def _on_configuration_changed(self, _event=None) -> None:

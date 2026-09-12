@@ -27,6 +27,7 @@ class ModelSpec:
     formula: str
     parameter_names: tuple[str, ...]
     function: ModelFunction
+    parameter_descriptions: tuple[str, ...] = ()
 
 
 def make_polynomial_model(degree: int) -> ModelFunction:
@@ -98,12 +99,16 @@ def get_model_spec(model_key: str, degree: int | None = None) -> ModelSpec:
         function = make_polynomial_model(degree)
         parameter_names = tuple(f"a{i}" for i in range(degree + 1))
         terms = ["a0"] + [f"a{i}*x^{i}" for i in range(1, degree + 1)]
+        parameter_descriptions = ("常数项（x⁰ 的系数）",) + tuple(
+            f"x^{i} 项的系数" for i in range(1, degree + 1)
+        )
         return ModelSpec(
             key=model_key,
             display_name=f"{degree} 阶多项式",
             formula="y = " + " + ".join(terms),
             parameter_names=parameter_names,
             function=function,
+            parameter_descriptions=parameter_descriptions,
         )
 
     specifications = {
@@ -113,6 +118,11 @@ def get_model_spec(model_key: str, degree: int | None = None) -> ModelSpec:
             formula="y = a * exp(b*x) + c",
             parameter_names=("a", "b", "c"),
             function=exponential_model,
+            parameter_descriptions=(
+                "倍率（x=0 时相对基线的偏移）",
+                "增长或衰减速率",
+                "纵向偏移（基线）",
+            ),
         ),
         "sine": ModelSpec(
             key="sine",
@@ -120,6 +130,12 @@ def get_model_spec(model_key: str, degree: int | None = None) -> ModelSpec:
             formula="y = A * sin(2*pi*f*x + phi) + c",
             parameter_names=("A", "f", "phi", "c"),
             function=sine_model,
+            parameter_descriptions=(
+                "振幅",
+                "频率（每个 x 单位的周期数）",
+                "相位（弧度）",
+                "纵向偏移",
+            ),
         ),
         "logistic": ModelSpec(
             key="logistic",
@@ -127,6 +143,12 @@ def get_model_spec(model_key: str, degree: int | None = None) -> ModelSpec:
             formula="y = c + L / (1 + exp(-k*(x-x0)))",
             parameter_names=("L", "k", "x0", "c"),
             function=logistic_model,
+            parameter_descriptions=(
+                "上下平台差值",
+                "增长/下降速率（正值上升，负值下降）",
+                "曲线中点的 x 值",
+                "下平台基线",
+            ),
         ),
     }
 
