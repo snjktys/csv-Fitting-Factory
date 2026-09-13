@@ -90,6 +90,48 @@ def logistic_model(
     return baseline + level * sigmoid
 
 
+_FIXED_MODEL_SPECS = {
+    "exponential": ModelSpec(
+        key="exponential",
+        display_name="指数模型",
+        formula="y = a * exp(b*x) + c",
+        parameter_names=("a", "b", "c"),
+        function=exponential_model,
+        parameter_descriptions=(
+            "倍率（x=0 时相对基线的偏移）",
+            "增长或衰减速率",
+            "纵向偏移（基线）",
+        ),
+    ),
+    "sine": ModelSpec(
+        key="sine",
+        display_name="正弦模型",
+        formula="y = A * sin(2*pi*f*x + phi) + c",
+        parameter_names=("A", "f", "phi", "c"),
+        function=sine_model,
+        parameter_descriptions=(
+            "振幅",
+            "频率（每个 x 单位的周期数）",
+            "相位（弧度）",
+            "纵向偏移",
+        ),
+    ),
+    "logistic": ModelSpec(
+        key="logistic",
+        display_name="Logistic 模型",
+        formula="y = c + L / (1 + exp(-k*(x-x0)))",
+        parameter_names=("L", "k", "x0", "c"),
+        function=logistic_model,
+        parameter_descriptions=(
+            "上下平台差值",
+            "增长/下降速率（正值上升，负值下降）",
+            "曲线中点的 x 值",
+            "下平台基线",
+        ),
+    ),
+}
+
+
 def get_model_spec(model_key: str, degree: int | None = None) -> ModelSpec:
     """根据内部标识返回模型说明；多项式需要额外提供阶次。"""
 
@@ -111,49 +153,8 @@ def get_model_spec(model_key: str, degree: int | None = None) -> ModelSpec:
             parameter_descriptions=parameter_descriptions,
         )
 
-    specifications = {
-        "exponential": ModelSpec(
-            key="exponential",
-            display_name="指数模型",
-            formula="y = a * exp(b*x) + c",
-            parameter_names=("a", "b", "c"),
-            function=exponential_model,
-            parameter_descriptions=(
-                "倍率（x=0 时相对基线的偏移）",
-                "增长或衰减速率",
-                "纵向偏移（基线）",
-            ),
-        ),
-        "sine": ModelSpec(
-            key="sine",
-            display_name="正弦模型",
-            formula="y = A * sin(2*pi*f*x + phi) + c",
-            parameter_names=("A", "f", "phi", "c"),
-            function=sine_model,
-            parameter_descriptions=(
-                "振幅",
-                "频率（每个 x 单位的周期数）",
-                "相位（弧度）",
-                "纵向偏移",
-            ),
-        ),
-        "logistic": ModelSpec(
-            key="logistic",
-            display_name="Logistic 模型",
-            formula="y = c + L / (1 + exp(-k*(x-x0)))",
-            parameter_names=("L", "k", "x0", "c"),
-            function=logistic_model,
-            parameter_descriptions=(
-                "上下平台差值",
-                "增长/下降速率（正值上升，负值下降）",
-                "曲线中点的 x 值",
-                "下平台基线",
-            ),
-        ),
-    }
-
     try:
-        return specifications[model_key]
+        return _FIXED_MODEL_SPECS[model_key]
     except KeyError as exc:
         raise ParameterValidationError(f"未知的拟合模型：{model_key}") from exc
 

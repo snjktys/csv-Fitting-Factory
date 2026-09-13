@@ -34,10 +34,7 @@ def create_figure() -> Figure:
 
     configure_chinese_font()
     figure = Figure(figsize=(8.5, 7.0), dpi=100)
-    top_axis = figure.add_subplot(211)
-    bottom_axis = figure.add_subplot(212)
-    _draw_empty_axes(top_axis, bottom_axis)
-    figure.tight_layout(pad=2.0)
+    _reset_figure(figure)
     return figure
 
 
@@ -86,6 +83,12 @@ def draw_fit_result(figure: Figure, data: CleanedData, result: FitResult) -> Non
 
 def clear_figure(figure: Figure) -> None:
     """恢复没有拟合结果时的空图提示。"""
+
+    _reset_figure(figure)
+
+
+def _reset_figure(figure: Figure) -> None:
+    """清空图形并恢复两个空状态子图。"""
 
     figure.clear()
     top_axis = figure.add_subplot(211)

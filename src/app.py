@@ -9,17 +9,12 @@
 from __future__ import annotations
 
 import tkinter as tk
-from pathlib import Path
 from tkinter import filedialog, messagebox, ttk
 
-import matplotlib as mpl
 import numpy as np
-from matplotlib import widgets
 from matplotlib.backends.backend_tkagg import (
     FigureCanvasTkAgg,
-    NavigationToolbar2Tk as MatplotlibNavigationToolbar2Tk,
 )
-from matplotlib.figure import Figure
 
 from .csv_handler import load_csv
 from .data_processor import prepare_data
@@ -27,6 +22,7 @@ from .data_types import CleanedData, DatasetInfo, FitConfig, FitResult
 from .exceptions import FittingFactoryError, ParameterValidationError
 from .fitting_engine import fit_curve
 from .fitting_models import get_model_spec
+from .gui_components import ChineseNavigationToolbar2Tk, ChineseSubplotTool
 from .initial_guess import estimate_initial_parameters
 from .report_generator import build_report_text, save_report, suggested_report_name
 from .visualization import clear_figure, create_figure, draw_fit_result
@@ -42,87 +38,6 @@ ERROR_DISPLAY_TO_KEY = {
     "CSV 误差列": "column",
     "统一误差值": "constant",
 }
-
-
-class ChineseSubplotTool(widgets.SubplotTool):
-    """显示中文标签且保留英文内部参数键的子图配置工具。"""
-
-    _parameter_names = ("left", "bottom", "right", "top", "wspace", "hspace")
-    _parameter_labels = ("左边距", "下边距", "右边距", "上边距", "水平间距", "垂直间距")
-
-    def __init__(self, targetfig: Figure, toolfig: Figure) -> None:
-        super().__init__(targetfig, toolfig)
-        toolfig.suptitle("拖动滑块调整子图布局")
-        for slider, label in zip(
-            self._sliders, self._parameter_labels, strict=True
-        ):
-            slider.label.set_text(label)
-        self.buttonreset.label.set_text("重置")
-
-    def _on_slider_changed(self, _) -> None:
-        """使用固定参数键更新布局，避免中文标签影响 Matplotlib 调用。"""
-
-        self.targetfig.subplots_adjust(
-            **dict(
-                zip(
-                    self._parameter_names,
-                    (slider.val for slider in self._sliders),
-                    strict=True,
-                )
-            )
-        )
-        if self.drawon:
-            self.targetfig.canvas.draw()
-
-
-class ChineseNavigationToolbar2Tk(MatplotlibNavigationToolbar2Tk):
-    """使用中文工具提示的 Matplotlib 导航工具栏。"""
-
-    toolitems = (
-        ("Home", "恢复初始视图", "home", "home"),
-        ("Back", "返回上一个视图", "back", "back"),
-        ("Forward", "前进到下一个视图", "forward", "forward"),
-        (None, None, None, None),
-        (
-            "Pan",
-            "平移：左键拖动，右键缩放；\nX/Y 固定坐标轴，Ctrl 固定纵横比",
-            "move",
-            "pan",
-        ),
-        (
-            "Zoom",
-            "矩形缩放：拖动矩形区域；\nX/Y 固定坐标轴",
-            "zoom_to_rect",
-            "zoom",
-        ),
-        ("Subplots", "配置子图", "subplots", "configure_subplots"),
-        (None, None, None, None),
-        ("Save", "保存图像", "filesave", "save_figure"),
-    )
-
-    def configure_subplots(self, *args):
-        """打开中文子图配置窗口。"""
-
-        if hasattr(self, "subplot_tool"):
-            self.subplot_tool.figure.canvas.manager.show()
-            return self.subplot_tool
-        with mpl.rc_context({"toolbar": "none"}):
-            manager = type(self.canvas).new_manager(Figure(figsize=(6, 3)), -1)
-        manager.set_window_title("子图布局配置")
-        tool_fig = manager.canvas.figure
-        tool_fig.subplots_adjust(top=0.9)
-        self.subplot_tool = ChineseSubplotTool(self.canvas.figure, tool_fig)
-        connection_id = self.canvas.mpl_connect(
-            "close_event", lambda _event: manager.destroy()
-        )
-
-        def on_tool_fig_close(_event) -> None:
-            self.canvas.mpl_disconnect(connection_id)
-            del self.subplot_tool
-
-        tool_fig.canvas.mpl_connect("close_event", on_tool_fig_close)
-        manager.show()
-        return self.subplot_tool
 
 
 class FittingFactoryApp:
@@ -160,7 +75,7 @@ class FittingFactoryApp:
         self.rmse_var = tk.StringVar(value="RMSE：--")
         self.status_var = tk.StringVar()
         self.row_info_var = tk.StringVar(value="有效数据：--　删除数据：--")
-        self.formula_var = tk.StringVar(value="")
+        self.formula_var = tk.StringVar()
 
     def _configure_style(self) -> None:
         """设置简洁统一的 ttk 外观。"""
@@ -171,8 +86,6 @@ class FittingFactoryApp:
         style.configure("Title.TLabel", font=("Microsoft YaHei UI", 18, "bold"))
         style.configure("Section.TLabelframe.Label", font=("Microsoft YaHei UI", 11, "bold"))
         style.configure("Primary.TButton", font=("Microsoft YaHei UI", 10, "bold"), padding=7)
-        # 两个主要操作按钮必须使用相同的字体和内边距，避免 ttk 默认样式
-        # 与强调样式在不同 Windows 主题下出现高度、字号不一致。
         style.configure("Action.TButton", font=("Microsoft YaHei UI", 10, "bold"), padding=7)
         style.configure("Status.TLabel", padding=(8, 5))
 
@@ -293,8 +206,32 @@ class FittingFactoryApp:
         self.toolbar.update()
         self.toolbar.pack(side=tk.LEFT)
 
+    @staticmethod
+    def _section(parent: ttk.Frame, title: str) -> ttk.LabelFrame:
+        return ttk.LabelFrame(
+            parent, text=title, style="Section.TLabelframe", padding=10
+        )
+
+    @staticmethod
+    def _combo_row(
+        parent: ttk.LabelFrame,
+        row: int,
+        label: str,
+        variable: tk.StringVar,
+        values: list[str] | None = None,
+    ) -> ttk.Combobox:
+        ttk.Label(parent, text=label).grid(row=row, column=0, sticky="w", pady=3)
+        combo = ttk.Combobox(
+            parent,
+            textvariable=variable,
+            values=values or [],
+            state="disabled",
+        )
+        combo.grid(row=row, column=1, sticky="ew", padx=(8, 0), pady=3)
+        return combo
+
     def _build_file_section(self, parent: ttk.Frame) -> None:
-        section = ttk.LabelFrame(parent, text="1  数据文件", style="Section.TLabelframe", padding=10)
+        section = self._section(parent, "1  数据文件")
         section.pack(fill=tk.X, pady=(0, 8))
         ttk.Button(
             section,
@@ -310,32 +247,18 @@ class FittingFactoryApp:
         ).pack(fill=tk.X, pady=(8, 0))
 
     def _build_column_section(self, parent: ttk.Frame) -> None:
-        section = ttk.LabelFrame(parent, text="2  数据列与误差", style="Section.TLabelframe", padding=10)
+        section = self._section(parent, "2  数据列与误差")
         section.pack(fill=tk.X, pady=(0, 8))
         section.columnconfigure(1, weight=1)
 
-        ttk.Label(section, text="X 列").grid(row=0, column=0, sticky="w", pady=3)
-        self.x_combo = ttk.Combobox(section, textvariable=self.x_column_var, state="disabled")
-        self.x_combo.grid(row=0, column=1, sticky="ew", padx=(8, 0), pady=3)
-
-        ttk.Label(section, text="Y 列").grid(row=1, column=0, sticky="w", pady=3)
-        self.y_combo = ttk.Combobox(section, textvariable=self.y_column_var, state="disabled")
-        self.y_combo.grid(row=1, column=1, sticky="ew", padx=(8, 0), pady=3)
-
-        ttk.Label(section, text="误差模式").grid(row=2, column=0, sticky="w", pady=3)
-        self.error_mode_combo = ttk.Combobox(
-            section,
-            textvariable=self.error_mode_var,
-            values=list(ERROR_DISPLAY_TO_KEY),
-            state="disabled",
+        self.x_combo = self._combo_row(section, 0, "X 列", self.x_column_var)
+        self.y_combo = self._combo_row(section, 1, "Y 列", self.y_column_var)
+        self.error_mode_combo = self._combo_row(
+            section, 2, "误差模式", self.error_mode_var, list(ERROR_DISPLAY_TO_KEY)
         )
-        self.error_mode_combo.grid(row=2, column=1, sticky="ew", padx=(8, 0), pady=3)
-
-        ttk.Label(section, text="误差来源").grid(row=3, column=0, sticky="w", pady=3)
-        self.error_source_combo = ttk.Combobox(
-            section, textvariable=self.error_source_var, state="disabled"
+        self.error_source_combo = self._combo_row(
+            section, 3, "误差来源", self.error_source_var
         )
-        self.error_source_combo.grid(row=3, column=1, sticky="ew", padx=(8, 0), pady=3)
 
         self.preview_button = ttk.Button(
             section,
@@ -351,12 +274,7 @@ class FittingFactoryApp:
         self.error_source_combo.bind("<<ComboboxSelected>>", self._on_configuration_changed)
 
     def _build_model_section(self, parent: ttk.Frame) -> None:
-        section = ttk.LabelFrame(
-            parent,
-            text="3  拟合模型与参数",
-            style="Section.TLabelframe",
-            padding=10,
-        )
+        section = self._section(parent, "3  拟合模型与参数")
         section.pack(fill=tk.X, pady=(0, 8))
         section.columnconfigure(1, weight=1)
 
@@ -419,7 +337,7 @@ class FittingFactoryApp:
         self.fit_button.grid(row=0, column=1, sticky="ew", padx=(4, 0))
 
     def _build_result_section(self, parent: ttk.Frame) -> None:
-        section = ttk.LabelFrame(parent, text="4  拟合结果", style="Section.TLabelframe", padding=10)
+        section = self._section(parent, "4  拟合结果")
         section.pack(fill=tk.X)
         metrics = ttk.Frame(section)
         metrics.pack(fill=tk.X)
@@ -483,11 +401,13 @@ class FittingFactoryApp:
             combo.configure(values=columns, state="readonly")
         self.x_column_var.set(columns[0])
         self.y_column_var.set(columns[1])
-        self.error_mode_combo.configure(state="readonly")
-        self.model_combo.configure(state="readonly")
-        self.preview_button.configure(state="normal")
-        self.guess_button.configure(state="normal")
-        self.fit_button.configure(state="normal")
+        for widget in (
+            self.error_mode_combo,
+            self.model_combo,
+        ):
+            widget.configure(state="readonly")
+        for widget in (self.preview_button, self.guess_button, self.fit_button):
+            widget.configure(state="normal")
         self.file_info_var.set(
             f"{dataset.file_name}\n编码：{dataset.encoding}　"
             f"{dataset.original_rows} 行 × {len(columns)} 列"
