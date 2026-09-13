@@ -1,10 +1,7 @@
 """Tkinter 主窗口和用户操作流程。
 
 本文件只负责界面与模块协调，数学公式和拟合算法位于独立模块中。
-本模块由 AI 辅助生成，已通过后续自动化测试与手工冒烟测试，仍需学生本人理解。
 """
-
-# 本模块由 AI 生成，已通过自动化测试和运行检查，需学生本人最终验证。
 
 from __future__ import annotations
 
@@ -83,7 +80,6 @@ class FittingFactoryApp:
         style = ttk.Style()
         if "vista" in style.theme_names():
             style.theme_use("vista")
-        style.configure("Title.TLabel", font=("Microsoft YaHei UI", 18, "bold"))
         style.configure("Section.TLabelframe.Label", font=("Microsoft YaHei UI", 11, "bold"))
         style.configure("Primary.TButton", font=("Microsoft YaHei UI", 10, "bold"), padding=7)
         style.configure("Action.TButton", font=("Microsoft YaHei UI", 10, "bold"), padding=7)

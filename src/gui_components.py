@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import matplotlib as mpl
 from matplotlib import widgets
-from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import NavigationToolbar2Tk
+from matplotlib.figure import Figure
 
 
 class ChineseSubplotTool(widgets.SubplotTool):
