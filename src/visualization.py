@@ -26,24 +26,35 @@ def configure_chinese_font() -> str | None:
     return None
 
 
-def create_figure() -> Figure:
+def create_figure(language: str = "zh") -> Figure:
     """创建包含拟合图和残差图的 Figure。"""
 
     configure_chinese_font()
     figure = Figure(figsize=(8.5, 7.0), dpi=100)
-    _reset_figure(figure)
+    _reset_figure(figure, language)
     return figure
 
 
-def draw_fit_result(figure: Figure, data: CleanedData, result: FitResult) -> None:
+def draw_fit_result(
+    figure: Figure,
+    data: CleanedData,
+    result: FitResult,
+    language: str = "zh",
+    model_name: str | None = None,
+) -> None:
     """清空 Figure，并绘制原始数据、误差棒、拟合曲线和残差。"""
 
     figure.clear()
     fit_axis = figure.add_subplot(211)
     residual_axis = figure.add_subplot(212)
 
+    labels = {
+        "zh": ("原始数据", "原始数据 / 误差棒", "拟合结果", "残差图", "残差"),
+        "en": ("Raw Data", "Raw Data / Error Bars", "Fitting Result", "Residual Plot", "Residual"),
+    }[language]
+    display_model_name = model_name or result.model_name
     if data.sigma is None:
-        fit_axis.scatter(data.x, data.y, color="#2f73c5", label="原始数据", zorder=3)
+        fit_axis.scatter(data.x, data.y, color="#2f73c5", label=labels[0], zorder=3)
     else:
         fit_axis.errorbar(
             data.x,
@@ -53,7 +64,7 @@ def draw_fit_result(figure: Figure, data: CleanedData, result: FitResult) -> Non
             color="#2f73c5",
             ecolor="#5f91d0",
             capsize=3,
-            label="原始数据 / 误差棒",
+            label=labels[1],
             zorder=3,
         )
     fit_axis.plot(
@@ -61,9 +72,9 @@ def draw_fit_result(figure: Figure, data: CleanedData, result: FitResult) -> Non
         result.smooth_y,
         color="#d94b4b",
         linewidth=2.2,
-        label=result.model_name,
+        label=display_model_name,
     )
-    fit_axis.set_title(f"拟合结果 - {result.model_name}")
+    fit_axis.set_title(f"{labels[2]} - {display_model_name}")
     fit_axis.set_xlabel(data.x_column)
     fit_axis.set_ylabel(data.y_column)
     fit_axis.grid(alpha=0.25)
@@ -71,48 +82,52 @@ def draw_fit_result(figure: Figure, data: CleanedData, result: FitResult) -> Non
 
     residual_axis.scatter(data.x, result.residuals, color="#8659b5", s=28)
     residual_axis.axhline(0.0, color="#333333", linestyle="--", linewidth=1.2)
-    residual_axis.set_title("残差图")
+    residual_axis.set_title(labels[3])
     residual_axis.set_xlabel(data.x_column)
-    residual_axis.set_ylabel("残差")
+    residual_axis.set_ylabel(labels[4])
     residual_axis.grid(alpha=0.25)
     figure.tight_layout(pad=2.0)
 
 
-def clear_figure(figure: Figure) -> None:
+def clear_figure(figure: Figure, language: str = "zh") -> None:
     """恢复没有拟合结果时的空图提示。"""
 
-    _reset_figure(figure)
+    _reset_figure(figure, language)
 
 
-def _reset_figure(figure: Figure) -> None:
+def _reset_figure(figure: Figure, language: str = "zh") -> None:
     """清空图形并恢复两个空状态子图。"""
 
     figure.clear()
     top_axis = figure.add_subplot(211)
     bottom_axis = figure.add_subplot(212)
-    _draw_empty_axes(top_axis, bottom_axis)
+    _draw_empty_axes(top_axis, bottom_axis, language)
     figure.tight_layout(pad=2.0)
 
 
-def _draw_empty_axes(top_axis, bottom_axis) -> None:
+def _draw_empty_axes(top_axis, bottom_axis, language: str = "zh") -> None:
     """在空图中提供下一步操作提示。"""
 
-    top_axis.set_title("拟合结果图")
+    texts = {
+        "zh": ("拟合结果图", "请先导入 CSV 并执行拟合", "残差图", "拟合成功后显示残差"),
+        "en": ("Fitting Result", "Open a CSV file and run fitting", "Residual Plot", "Residuals appear after a successful fit"),
+    }[language]
+    top_axis.set_title(texts[0])
     top_axis.text(
         0.5,
         0.5,
-        "请先导入 CSV 并执行拟合",
+        texts[1],
         ha="center",
         va="center",
         transform=top_axis.transAxes,
     )
     top_axis.set_xticks([])
     top_axis.set_yticks([])
-    bottom_axis.set_title("残差图")
+    bottom_axis.set_title(texts[2])
     bottom_axis.text(
         0.5,
         0.5,
-        "拟合成功后显示残差",
+        texts[3],
         ha="center",
         va="center",
         transform=bottom_axis.transAxes,
