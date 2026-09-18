@@ -82,7 +82,7 @@
   <rect x="344" y="780" width="124" height="30" rx="7" fill="#7d68ae"/>
   <text x="406" y="801" text-anchor="middle" class="button">生成报告</text>
   <rect x="344" y="818" width="124" height="30" rx="7" fill="#4776b8"/>
-  <text x="406" y="839" text-anchor="middle" class="small">蒙特卡洛（1000次）</text>
+  <text x="406" y="839" text-anchor="middle" class="button">蒙特卡洛分析</text>
 
   <text x="542" y="202" class="section">拟合结果图</text>
   <rect x="542" y="220" width="856" height="362" rx="8" fill="#fcfdff" stroke="#cad3df"/>
