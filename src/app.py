@@ -28,8 +28,14 @@ from .localization import (
     localized_column_labels,
     translate_message,
 )
+from .monte_carlo import bootstrap_parameters
 from .report_generator import build_report_text, save_report, suggested_report_name
-from .visualization import clear_figure, create_figure, draw_fit_result
+from .visualization import (
+    clear_figure,
+    create_figure,
+    create_parameter_histograms,
+    draw_fit_result,
+)
 
 class FittingFactoryApp:
     """CSV 数据曲线拟合工厂的主窗口。"""
@@ -364,6 +370,11 @@ class FittingFactoryApp:
         )
         self.localizer.bind(self.report_button, "generate_report")
         self.report_button.pack(fill=tk.X, pady=(8, 0))
+        self.monte_carlo_button = ttk.Button(
+            section, command=self.run_monte_carlo, state="disabled"
+        )
+        self.localizer.bind(self.monte_carlo_button, "monte_carlo")
+        self.monte_carlo_button.pack(fill=tk.X, pady=(6, 0))
 
     def _install_controls_wheel_binding(self, widget: tk.Misc) -> None:
         """给左侧控件添加优先级滚轮绑定，避免 Combobox 改变选项。"""
@@ -749,6 +760,7 @@ class FittingFactoryApp:
         )
         self.canvas.draw_idle()
         self.report_button.configure(state="normal")
+        self.monte_carlo_button.configure(state="normal")
         self._set_status("fit_success")
         if result.warnings:
             messagebox.showwarning(
@@ -759,6 +771,48 @@ class FittingFactoryApp:
                 ),
                 parent=self.root,
             )
+
+    def run_monte_carlo(self) -> None:
+        """对当前拟合执行 1000 次有放回重采样并显示参数直方图。"""
+
+        # 本函数由 AI 生成，已人工验证；
+
+        if self.cleaned_data is None or self.fit_result is None:
+            return
+        degree = self._read_degree() if self.fit_result.model_key == "polynomial" else None
+        config = FitConfig(
+            self.fit_result.model_key,
+            degree,
+            self.fit_result.parameters.tolist(),
+        )
+        self.monte_carlo_button.configure(state="disabled")
+        self._set_status("monte_carlo_running")
+        self.root.update_idletasks()
+        try:
+            samples = bootstrap_parameters(self.cleaned_data, config)
+        except FittingFactoryError as exc:
+            messagebox.showerror(
+                self.localizer.text("monte_carlo_failed"),
+                translate_message(str(exc), self.localizer.language),
+                parent=self.root,
+            )
+            self._set_status("fit_success")
+            return
+        finally:
+            self.monte_carlo_button.configure(state="normal")
+
+        window = tk.Toplevel(self.root)
+        window.title(self.localizer.text("monte_carlo_title"))
+        figure = create_parameter_histograms(
+            samples, self.fit_result.parameter_names, self.localizer.language
+        )
+        canvas = FigureCanvasTkAgg(figure, master=window)
+        canvas.draw()
+        canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
+        window.figure = figure
+        window.canvas = canvas
+        window.geometry("850x650")
+        self._set_status("monte_carlo_done")
 
     def export_report(self) -> None:
         """把当前有效拟合结果保存为 TXT。"""
@@ -889,6 +943,8 @@ class FittingFactoryApp:
         self.rmse_var.set(self.localizer.text("rmse_empty"))
         if hasattr(self, "report_button"):
             self.report_button.configure(state="disabled")
+        if hasattr(self, "monte_carlo_button"):
+            self.monte_carlo_button.configure(state="disabled")
         if hasattr(self, "figure"):
             clear_figure(self.figure, self.localizer.language)
             self.canvas.draw_idle()

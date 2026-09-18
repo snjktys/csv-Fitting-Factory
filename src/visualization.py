@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import numpy as np
 from matplotlib import font_manager, rcParams
 from matplotlib.figure import Figure
 
@@ -87,6 +88,33 @@ def draw_fit_result(
     residual_axis.set_ylabel(labels[4])
     residual_axis.grid(alpha=0.25)
     figure.tight_layout(pad=2.0)
+
+
+def create_parameter_histograms(
+    samples: np.ndarray, parameter_names: list[str], language: str = "zh"
+) -> Figure:
+    """绘制蒙特卡洛参数样本的直方图。"""
+
+    # 本函数由 AI 生成，已人工验证；
+
+    configure_chinese_font()
+    columns = 2 if len(parameter_names) > 1 else 1
+    rows = (len(parameter_names) + columns - 1) // columns
+    figure = Figure(figsize=(8, max(3, rows * 2.6)), dpi=100)
+    value_label, count_label, title = {
+        "zh": ("参数值", "次数", f"蒙特卡洛参数分布（成功 {len(samples)} 次）"),
+        "en": ("Parameter Value", "Count", f"Monte Carlo Parameter Distributions ({len(samples)} successful)"),
+    }[language]
+    for index, name in enumerate(parameter_names):
+        axis = figure.add_subplot(rows, columns, index + 1)
+        axis.hist(samples[:, index], bins=30, color="#2f73c5", edgecolor="white")
+        axis.set_title(name)
+        axis.set_xlabel(value_label)
+        axis.set_ylabel(count_label)
+        axis.grid(axis="y", alpha=0.2)
+    figure.suptitle(title)
+    figure.tight_layout(pad=2.0)
+    return figure
 
 
 def clear_figure(figure: Figure, language: str = "zh") -> None:
