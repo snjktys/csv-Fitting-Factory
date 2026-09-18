@@ -8,12 +8,12 @@
       <feDropShadow dx="0" dy="5" stdDeviation="8" flood-color="#1b2940" flood-opacity="0.16"/>
     </filter>
     <style>
-      .title { font: 700 26px 'Microsoft YaHei', 'Noto Sans CJK SC', sans-serif; fill: white; }
-      .menu { font: 500 16px 'Microsoft YaHei', 'Noto Sans CJK SC', sans-serif; fill: #24344d; }
-      .section { font: 700 18px 'Microsoft YaHei', 'Noto Sans CJK SC', sans-serif; fill: #1e3557; }
-      .text { font: 400 15px 'Microsoft YaHei', 'Noto Sans CJK SC', sans-serif; fill: #3d4d64; }
-      .small { font: 400 13px 'Microsoft YaHei', 'Noto Sans CJK SC', sans-serif; fill: #647287; }
-      .button { font: 600 15px 'Microsoft YaHei', 'Noto Sans CJK SC', sans-serif; fill: white; }
+      .title { font: 700 26px 'SimSun', '宋体', 'Times New Roman', serif; fill: white; }
+      .menu { font: 500 16px 'SimSun', '宋体', 'Times New Roman', serif; fill: #24344d; }
+      .section { font: 700 18px 'SimSun', '宋体', 'Times New Roman', serif; fill: #1e3557; }
+      .text { font: 400 15px 'SimSun', '宋体', 'Times New Roman', serif; fill: #3d4d64; }
+      .small { font: 400 13px 'SimSun', '宋体', 'Times New Roman', serif; fill: #647287; }
+      .button { font: 600 15px 'SimSun', '宋体', 'Times New Roman', serif; fill: white; }
       .input { fill: white; stroke: #bac5d4; stroke-width: 1.5; }
       .panel { fill: white; stroke: #d7dee8; stroke-width: 1.5; }
       .grid { stroke: #e5eaf1; stroke-width: 1; }

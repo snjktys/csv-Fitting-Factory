@@ -11,11 +11,11 @@
       <path d="M0,0 L0,6 L9,3 z" fill="#53647d"/>
     </marker>
     <style>
-      .title { font: 700 34px 'Microsoft YaHei', 'Noto Sans CJK SC', sans-serif; fill: #182640; }
-      .subtitle { font: 400 16px 'Microsoft YaHei', 'Noto Sans CJK SC', sans-serif; fill: #607088; }
-      .node-title { font: 700 19px 'Microsoft YaHei', 'Noto Sans CJK SC', sans-serif; fill: #1d2d47; }
-      .node-text { font: 400 15px 'Microsoft YaHei', 'Noto Sans CJK SC', sans-serif; fill: #46566d; }
-      .branch { font: 700 14px 'Microsoft YaHei', 'Noto Sans CJK SC', sans-serif; fill: #56667d; }
+      .title { font: 700 34px 'SimSun', '宋体', 'Times New Roman', serif; fill: #182640; }
+      .subtitle { font: 400 16px 'SimSun', '宋体', 'Times New Roman', serif; fill: #607088; }
+      .node-title { font: 700 19px 'SimSun', '宋体', 'Times New Roman', serif; fill: #1d2d47; }
+      .node-text { font: 400 15px 'SimSun', '宋体', 'Times New Roman', serif; fill: #46566d; }
+      .branch { font: 700 14px 'SimSun', '宋体', 'Times New Roman', serif; fill: #56667d; }
       .arrow { stroke: #53647d; stroke-width: 2.4; fill: none; marker-end: url(#arrow); }
       .box { fill: white; stroke: #5374ae; stroke-width: 2; }
       .decision { fill: #fff9e9; stroke: #c48a2e; stroke-width: 2; }

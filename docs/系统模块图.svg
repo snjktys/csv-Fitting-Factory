@@ -11,11 +11,11 @@
       <path d="M0,0 L0,6 L9,3 z" fill="#50627c"/>
     </marker>
     <style>
-      .title { font: 700 34px 'Microsoft YaHei', 'Noto Sans CJK SC', sans-serif; fill: #17243b; }
-      .subtitle { font: 400 17px 'Microsoft YaHei', 'Noto Sans CJK SC', sans-serif; fill: #5b687c; }
-      .box-title { font: 700 22px 'Microsoft YaHei', 'Noto Sans CJK SC', sans-serif; fill: #17243b; }
-      .box-text { font: 400 16px 'Microsoft YaHei', 'Noto Sans CJK SC', sans-serif; fill: #43516a; }
-      .label { font: 600 15px 'Microsoft YaHei', 'Noto Sans CJK SC', sans-serif; fill: #52627a; }
+      .title { font: 700 34px 'SimSun', '宋体', 'Times New Roman', serif; fill: #17243b; }
+      .subtitle { font: 400 17px 'SimSun', '宋体', 'Times New Roman', serif; fill: #5b687c; }
+      .box-title { font: 700 22px 'SimSun', '宋体', 'Times New Roman', serif; fill: #17243b; }
+      .box-text { font: 400 16px 'SimSun', '宋体', 'Times New Roman', serif; fill: #43516a; }
+      .label { font: 600 15px 'SimSun', '宋体', 'Times New Roman', serif; fill: #52627a; }
       .arrow { stroke: #50627c; stroke-width: 2.4; fill: none; marker-end: url(#arrow); }
     </style>
   </defs>
