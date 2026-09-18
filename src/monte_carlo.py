@@ -19,8 +19,6 @@ def bootstrap_parameters(
 ) -> np.ndarray:
     """重复有放回抽取数据行，返回每次成功拟合得到的参数。"""
 
-    # 本函数由 AI 生成，已人工验证；
-
     if iterations < 1:
         raise ParameterValidationError("蒙特卡洛重采样次数必须大于 0。")
 

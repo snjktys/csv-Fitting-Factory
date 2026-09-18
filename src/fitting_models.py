@@ -9,6 +9,7 @@ from dataclasses import dataclass
 from typing import Callable
 
 import numpy as np
+from scipy.special import expit
 
 from .exceptions import ParameterValidationError
 
@@ -41,10 +42,7 @@ def make_polynomial_model(degree: int) -> ModelFunction:
 
         if len(coefficients) != degree + 1:
             raise ValueError(f"{degree} 阶多项式需要 {degree + 1} 个参数。")
-        result = np.zeros_like(np.asarray(x, dtype=float), dtype=float)
-        for power, coefficient in enumerate(coefficients):
-            result += coefficient * np.power(x, power)
-        return result
+        return np.polynomial.polynomial.polyval(np.asarray(x, dtype=float), coefficients)
 
     return polynomial
 
@@ -73,18 +71,9 @@ def sine_model(
 def logistic_model(
     x: np.ndarray, level: float, rate: float, midpoint: float, baseline: float
 ) -> np.ndarray:
-    """计算四参数 Logistic 模型。
-
-    使用分段写法计算 sigmoid，避免 exp 在很大的正负参数下溢出。
-    """
-
+    """计算四参数 Logistic 模型。"""
     z = rate * (np.asarray(x, dtype=float) - midpoint)
-    sigmoid = np.empty_like(z, dtype=float)
-    positive = z >= 0
-    sigmoid[positive] = 1.0 / (1.0 + np.exp(-z[positive]))
-    exp_z = np.exp(z[~positive])
-    sigmoid[~positive] = exp_z / (1.0 + exp_z)
-    return baseline + level * sigmoid
+    return baseline + level * expit(z)
 
 
 _FIXED_MODEL_SPECS = {
@@ -154,9 +143,3 @@ def get_model_spec(model_key: str, degree: int | None = None) -> ModelSpec:
         return _FIXED_MODEL_SPECS[model_key]
     except KeyError as exc:
         raise ParameterValidationError(f"未知的拟合模型：{model_key}") from exc
-
-
-def model_parameter_count(model_key: str, degree: int | None = None) -> int:
-    """返回模型需要的参数数量。"""
-
-    return len(get_model_spec(model_key, degree).parameter_names)

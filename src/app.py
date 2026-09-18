@@ -9,9 +9,7 @@ import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
 import numpy as np
-from matplotlib.backends.backend_tkagg import (
-    FigureCanvasTkAgg,
-)
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 from .csv_handler import load_csv
 from .data_processor import prepare_data
@@ -87,7 +85,6 @@ class FittingFactoryApp:
         if "vista" in style.theme_names():
             style.theme_use("vista")
         style.configure("Section.TLabelframe.Label", font=("Microsoft YaHei UI", 11, "bold"))
-        style.configure("Primary.TButton", font=("Microsoft YaHei UI", 10, "bold"), padding=7)
         style.configure("Action.TButton", font=("Microsoft YaHei UI", 10, "bold"), padding=7)
         style.configure("Status.TLabel", padding=(8, 5))
 
@@ -176,12 +173,11 @@ class FittingFactoryApp:
             if not bbox:
                 return
             controls_canvas.configure(scrollregion=bbox)
-            content_height = bbox[3] - bbox[1]
-            viewport_height = controls_canvas.winfo_height()
-            self._controls_scrollable = content_height > viewport_height + 1
+            self._controls_scrollable = (
+                bbox[3] - bbox[1] > controls_canvas.winfo_height() + 1
+            )
             if self._controls_scrollable:
-                if not controls_scrollbar.winfo_ismapped():
-                    controls_scrollbar.grid(row=0, column=1, sticky="ns")
+                controls_scrollbar.grid()
             else:
                 # 全屏或大窗口时内容完全可见，不显示多余滚动条，也不移动 Canvas。
                 controls_scrollbar.grid_remove()
@@ -247,7 +243,7 @@ class FittingFactoryApp:
         self.localizer.bind(ttk.Button(
             section,
             command=self.open_csv,
-            style="Primary.TButton",
+            style="Action.TButton",
         ), "open_csv").pack(fill=tk.X)
         ttk.Label(
             section,
@@ -397,9 +393,8 @@ class FittingFactoryApp:
             units = -int(delta / 120) if delta else 0
             if units == 0 and delta:
                 units = -1 if delta > 0 else 1
-        if units:
-            if self._controls_scrollable:
-                self.controls_canvas.yview_scroll(units, "units")
+        if units and self._controls_scrollable:
+            self.controls_canvas.yview_scroll(units, "units")
         # 必须返回 break，阻止 ttk.Combobox/Spinbox 继续处理同一个滚轮事件。
         return "break"
 
@@ -556,11 +551,7 @@ class FittingFactoryApp:
         try:
             dataset = load_csv(path)
         except FittingFactoryError as exc:
-            messagebox.showerror(
-                self.localizer.text("csv_read_failed"),
-                translate_message(str(exc), self.localizer.language),
-                parent=self.root,
-            )
+            self._show_error("csv_read_failed", exc)
             return
 
         self.dataset = dataset
@@ -613,10 +604,7 @@ class FittingFactoryApp:
         self.degree_spinbox.configure(state="normal" if model_key == "polynomial" else "disabled")
         if model_key == "polynomial" and degree is None:
             return
-        try:
-            spec = get_model_spec(model_key, degree)
-        except FittingFactoryError:
-            return
+        spec = get_model_spec(model_key, degree)
         self.formula_var.set(spec.formula)
         existing_values = {
             name: entry.get() for name, entry in self.parameter_entries.items()
@@ -625,8 +613,7 @@ class FittingFactoryApp:
             widget.destroy()
         self.parameter_entries.clear()
         default_values = [0.0] * len(spec.parameter_names)
-        if default_values:
-            default_values[0] = 1.0
+        default_values[0] = 1.0
         parameter_defaults = zip(
             spec.parameter_names,
             spec.parameter_descriptions
@@ -711,11 +698,7 @@ class FittingFactoryApp:
                     parent=self.root,
                 )
         except FittingFactoryError as exc:
-            messagebox.showerror(
-                self.localizer.text("guess_failed"),
-                translate_message(str(exc), self.localizer.language),
-                parent=self.root,
-            )
+            self._show_error("guess_failed", exc)
 
     def run_fitting(self) -> None:
         """执行当前配置的曲线拟合，并刷新指标和图形。"""
@@ -736,11 +719,7 @@ class FittingFactoryApp:
             self.root.update_idletasks()
             result = fit_curve(data, FitConfig(model_key, degree, initial_parameters))
         except FittingFactoryError as exc:
-            messagebox.showerror(
-                self.localizer.text("fit_failed"),
-                translate_message(str(exc), self.localizer.language),
-                parent=self.root,
-            )
+            self._show_error("fit_failed", exc)
             self._set_status("fit_failed_status")
             return
         finally:
@@ -775,8 +754,6 @@ class FittingFactoryApp:
     def run_monte_carlo(self) -> None:
         """对当前拟合执行 1000 次有放回重采样并显示参数直方图。"""
 
-        # 本函数由 AI 生成，已人工验证；
-
         if self.cleaned_data is None or self.fit_result is None:
             return
         degree = self._read_degree() if self.fit_result.model_key == "polynomial" else None
@@ -791,11 +768,7 @@ class FittingFactoryApp:
         try:
             samples = bootstrap_parameters(self.cleaned_data, config)
         except FittingFactoryError as exc:
-            messagebox.showerror(
-                self.localizer.text("monte_carlo_failed"),
-                translate_message(str(exc), self.localizer.language),
-                parent=self.root,
-            )
+            self._show_error("monte_carlo_failed", exc)
             self._set_status("fit_success")
             return
         finally:
@@ -811,7 +784,7 @@ class FittingFactoryApp:
         canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
         window.figure = figure
         window.canvas = canvas
-        window.geometry("850x650")
+        window.geometry("1000x800" if len(self.fit_result.parameter_names) > 6 else "850x650")
         self._set_status("monte_carlo_done")
 
     def export_report(self) -> None:
@@ -836,11 +809,7 @@ class FittingFactoryApp:
             report_text = build_report_text(self.dataset, self.cleaned_data, self.fit_result)
             saved_path = save_report(report_text, output_path)
         except FittingFactoryError as exc:
-            messagebox.showerror(
-                self.localizer.text("report_save_failed"),
-                translate_message(str(exc), self.localizer.language),
-                parent=self.root,
-            )
+            self._show_error("report_save_failed", exc)
             return
         self._set_status("report_saved_status", path=saved_path)
         messagebox.showinfo(
@@ -954,6 +923,13 @@ class FittingFactoryApp:
         self._status_key = key
         self._status_values = values
         self._render_status()
+
+    def _show_error(self, title_key: str, error: Exception) -> None:
+        messagebox.showerror(
+            self.localizer.text(title_key),
+            translate_message(str(error), self.localizer.language),
+            parent=self.root,
+        )
 
     def _render_status(self) -> None:
         message = self.localizer.text(self._status_key, **self._status_values)

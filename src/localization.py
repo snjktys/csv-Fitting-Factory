@@ -256,7 +256,9 @@ def english_parameter_descriptions(model_key: str, degree: int | None) -> tuple[
 def localized_column_labels(columns: list[str], language: str) -> dict[str, str]:
     """返回原始列名到显示名的映射；无法可靠翻译的名称保持不变。"""
 
-    labels = [ENGLISH_COLUMN_LABELS.get(column, column) if language == "en" else column for column in columns]
+    if language == "zh":
+        return dict(zip(columns, columns, strict=True))
+    labels = [ENGLISH_COLUMN_LABELS.get(column, column) for column in columns]
     return {
         column: label if labels.count(label) == 1 else column
         for column, label in zip(columns, labels, strict=True)

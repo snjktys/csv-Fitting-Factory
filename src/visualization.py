@@ -7,6 +7,7 @@ from __future__ import annotations
 import numpy as np
 from matplotlib import font_manager, rcParams
 from matplotlib.figure import Figure
+from matplotlib.ticker import MaxNLocator
 
 from .data_types import CleanedData, FitResult
 
@@ -84,9 +85,10 @@ def draw_fit_result(
     residual_axis.scatter(data.x, result.residuals, color="#8659b5", s=28)
     residual_axis.axhline(0.0, color="#333333", linestyle="--", linewidth=1.2)
     residual_axis.set_title(labels[3])
-    residual_axis.set_xlabel(data.x_column)
     residual_axis.set_ylabel(labels[4])
-    residual_axis.grid(alpha=0.25)
+    for axis in (fit_axis, residual_axis):
+        axis.set_xlabel(data.x_column)
+        axis.grid(alpha=0.25)
     figure.tight_layout(pad=2.0)
 
 
@@ -95,12 +97,14 @@ def create_parameter_histograms(
 ) -> Figure:
     """绘制蒙特卡洛参数样本的直方图。"""
 
-    # 本函数由 AI 生成，已人工验证；
-
     configure_chinese_font()
-    columns = 2 if len(parameter_names) > 1 else 1
+    columns = min(3, max(1, int(np.ceil(np.sqrt(len(parameter_names))))))
     rows = (len(parameter_names) + columns - 1) // columns
-    figure = Figure(figsize=(8, max(3, rows * 2.6)), dpi=100)
+    figure = Figure(
+        figsize=(max(8, columns * 3.2), max(4.5, rows * 2.1)),
+        dpi=100,
+        layout="constrained",
+    )
     value_label, count_label, title = {
         "zh": ("参数值", "次数", f"蒙特卡洛参数分布（成功 {len(samples)} 次）"),
         "en": ("Parameter Value", "Count", f"Monte Carlo Parameter Distributions ({len(samples)} successful)"),
@@ -111,9 +115,10 @@ def create_parameter_histograms(
         axis.set_title(name)
         axis.set_xlabel(value_label)
         axis.set_ylabel(count_label)
+        axis.xaxis.set_major_locator(MaxNLocator(4))
+        axis.tick_params(labelsize=8)
         axis.grid(axis="y", alpha=0.2)
     figure.suptitle(title)
-    figure.tight_layout(pad=2.0)
     return figure
 
 
@@ -127,38 +132,14 @@ def _reset_figure(figure: Figure, language: str = "zh") -> None:
     """清空图形并恢复两个空状态子图。"""
 
     figure.clear()
-    top_axis = figure.add_subplot(211)
-    bottom_axis = figure.add_subplot(212)
-    _draw_empty_axes(top_axis, bottom_axis, language)
-    figure.tight_layout(pad=2.0)
-
-
-def _draw_empty_axes(top_axis, bottom_axis, language: str = "zh") -> None:
-    """在空图中提供下一步操作提示。"""
-
     texts = {
-        "zh": ("拟合结果图", "请先导入 CSV 并执行拟合", "残差图", "拟合成功后显示残差"),
-        "en": ("Fitting Result", "Open a CSV file and run fitting", "Residual Plot", "Residuals appear after a successful fit"),
+        "zh": (("拟合结果图", "请先导入 CSV 并执行拟合"), ("残差图", "拟合成功后显示残差")),
+        "en": (("Fitting Result", "Open a CSV file and run fitting"), ("Residual Plot", "Residuals appear after a successful fit")),
     }[language]
-    top_axis.set_title(texts[0])
-    top_axis.text(
-        0.5,
-        0.5,
-        texts[1],
-        ha="center",
-        va="center",
-        transform=top_axis.transAxes,
-    )
-    top_axis.set_xticks([])
-    top_axis.set_yticks([])
-    bottom_axis.set_title(texts[2])
-    bottom_axis.text(
-        0.5,
-        0.5,
-        texts[3],
-        ha="center",
-        va="center",
-        transform=bottom_axis.transAxes,
-    )
-    bottom_axis.set_xticks([])
-    bottom_axis.set_yticks([])
+    for index, (title, message) in enumerate(texts, 1):
+        axis = figure.add_subplot(2, 1, index)
+        axis.set_title(title)
+        axis.text(0.5, 0.5, message, ha="center", va="center", transform=axis.transAxes)
+        axis.set_xticks([])
+        axis.set_yticks([])
+    figure.tight_layout(pad=2.0)

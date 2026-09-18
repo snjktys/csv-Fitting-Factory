@@ -12,7 +12,7 @@ import pandas as pd
 from .data_types import DatasetInfo
 from .exceptions import CsvReadError
 
-SUPPORTED_ENCODINGS = ("utf-8-sig", "utf-8", "gb18030")
+SUPPORTED_ENCODINGS = ("utf-8-sig", "gb18030")
 
 
 def load_csv(file_path: str | Path) -> DatasetInfo:
