@@ -30,7 +30,7 @@
   <g filter="url(#shadow)"><rect x="440" y="115" width="320" height="68" rx="34" class="success"/><text x="600" y="157" text-anchor="middle" class="node-title">开始：用户打开 CSV</text></g>
   <path class="arrow" d="M600 183 L600 225"/>
 
-  <g filter="url(#shadow)"><rect x="395" y="225" width="410" height="82" rx="14" class="box"/><text x="600" y="258" text-anchor="middle" class="node-title">读取 CSV</text><text x="600" y="285" text-anchor="middle" class="node-text">依次尝试 UTF-8-SIG、UTF-8、GB18030</text></g>
+  <g filter="url(#shadow)"><rect x="395" y="225" width="410" height="82" rx="14" class="box"/><text x="600" y="258" text-anchor="middle" class="node-title">读取 CSV</text><text x="600" y="285" text-anchor="middle" class="node-text">先尝试 UTF-8-SIG（兼容 UTF-8），再尝试 GB18030</text></g>
   <path class="arrow" d="M600 307 L600 355"/>
 
   <g filter="url(#shadow)"><polygon points="600,355 785,420 600,485 415,420" class="decision"/><text x="600" y="414" text-anchor="middle" class="node-title">读取成功且至少两列？</text><text x="600" y="440" text-anchor="middle" class="node-text">文件非空、表头可用</text></g>

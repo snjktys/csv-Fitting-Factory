@@ -1,3 +1,4 @@
+# 本代码由 AI 辅助生成，已人工验证。
 """蒙特卡洛参数重采样测试。"""
 
 from pathlib import Path

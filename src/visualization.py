@@ -1,3 +1,4 @@
+# 本代码由 AI 辅助生成，已人工验证。
 """Matplotlib 拟合图和残差图绘制。
 
 """
@@ -107,7 +108,11 @@ def create_parameter_histograms(
     )
     value_label, count_label, title = {
         "zh": ("参数值", "次数", f"蒙特卡洛参数分布（成功 {len(samples)} 次）"),
-        "en": ("Parameter Value", "Count", f"Monte Carlo Parameter Distributions ({len(samples)} successful)"),
+        "en": (
+            "Parameter Value",
+            "Count",
+            f"Monte Carlo Parameter Distributions ({len(samples)} successful)",
+        ),
     }[language]
     for index, name in enumerate(parameter_names):
         axis = figure.add_subplot(rows, columns, index + 1)
@@ -134,7 +139,10 @@ def _reset_figure(figure: Figure, language: str = "zh") -> None:
     figure.clear()
     texts = {
         "zh": (("拟合结果图", "请先导入 CSV 并执行拟合"), ("残差图", "拟合成功后显示残差")),
-        "en": (("Fitting Result", "Open a CSV file and run fitting"), ("Residual Plot", "Residuals appear after a successful fit")),
+        "en": (
+            ("Fitting Result", "Open a CSV file and run fitting"),
+            ("Residual Plot", "Residuals appear after a successful fit"),
+        ),
     }[language]
     for index, (title, message) in enumerate(texts, 1):
         axis = figure.add_subplot(2, 1, index)

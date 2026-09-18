@@ -1,3 +1,4 @@
+# 本代码由 AI 辅助生成，已人工验证。
 """GUI 模块基础导入测试，不实际打开窗口。"""
 
 from pathlib import Path
@@ -11,6 +12,7 @@ from src.localization import (
     MODEL_LABELS,
     Localizer,
     localized_column_labels,
+    translate_message,
 )
 
 
@@ -131,3 +133,18 @@ def test_unknown_or_ambiguous_csv_column_names_are_not_translated() -> None:
         "输入量": "输入量",
         "Input": "Input",
     }
+
+
+def test_dynamic_business_errors_are_translated_to_english() -> None:
+    assert translate_message("当前模型需要 4 个初始参数。", "en") == (
+        "The current model requires 4 initial parameters."
+    )
+    assert translate_message("读取 CSV 时发生系统错误：disk error", "en") == (
+        "A system error occurred while reading the CSV: disk error"
+    )
+    assert translate_message(
+        "拟合没有收敛，请使用智能初值或调整参数后重试。（bad p0）", "en"
+    ) == (
+        "Fitting did not converge. Use a smart initial guess or adjust the "
+        "parameters.（bad p0）"
+    )

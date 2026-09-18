@@ -1,3 +1,4 @@
+# 本代码由 AI 辅助生成，已人工验证。
 """Tkinter 主窗口和用户操作流程。
 
 本文件只负责界面与模块协调，数学公式和拟合算法位于独立模块中。
@@ -39,6 +40,8 @@ class FittingFactoryApp:
     """CSV 数据曲线拟合工厂的主窗口。"""
 
     def __init__(self, root: tk.Tk) -> None:
+        """初始化窗口状态、控件和默认提示。"""
+
         self.root = root
         self.localizer = Localizer()
         self.root.title(self.localizer.text("app_title"))
@@ -75,7 +78,9 @@ class FittingFactoryApp:
         self.r_squared_var = tk.StringVar(value=self.localizer.text("r_squared_empty"))
         self.rmse_var = tk.StringVar(value=self.localizer.text("rmse_empty"))
         self.status_var = tk.StringVar()
-        self.row_info_var = tk.StringVar(value=self.localizer.text("valid_removed", valid="--", removed="--"))
+        self.row_info_var = tk.StringVar(
+            value=self.localizer.text("valid_removed", valid="--", removed="--")
+        )
         self.formula_var = tk.StringVar()
 
     def _configure_style(self) -> None:
@@ -89,10 +94,14 @@ class FittingFactoryApp:
         style.configure("Status.TLabel", padding=(8, 5))
 
     def _build_menu(self) -> None:
+        """创建文件、帮助和语言菜单。"""
+
         menu_bar = tk.Menu(self.root)
         file_menu = tk.Menu(menu_bar, tearoff=False)
         file_menu.add_command(label=self.localizer.text("open_csv"), command=self.open_csv)
-        file_menu.add_command(label=self.localizer.text("export_report"), command=self.export_report)
+        file_menu.add_command(
+            label=self.localizer.text("export_report"), command=self.export_report
+        )
         file_menu.add_separator()
         file_menu.add_command(label=self.localizer.text("exit"), command=self.root.destroy)
         menu_bar.add_cascade(label=self.localizer.text("file"), menu=file_menu)
@@ -169,6 +178,8 @@ class FittingFactoryApp:
         )
 
         def update_controls_scrollregion(_event=None) -> None:
+            """按内容高度更新左侧滚动范围和滚动条状态。"""
+
             bbox = controls_canvas.bbox("all")
             if not bbox:
                 return
@@ -184,6 +195,8 @@ class FittingFactoryApp:
                 controls_canvas.yview_moveto(0)
 
         def resize_controls_content(event) -> None:
+            """让左侧内容宽度始终跟随 Canvas。"""
+
             controls_canvas.itemconfigure(controls_window, width=event.width)
             controls_canvas.after_idle(update_controls_scrollregion)
 
@@ -214,6 +227,8 @@ class FittingFactoryApp:
         self.toolbar.pack(side=tk.LEFT)
 
     def _section(self, parent: ttk.Frame, key: str) -> ttk.LabelFrame:
+        """创建可随语言切换标题的分区框。"""
+
         return self.localizer.bind(
             ttk.LabelFrame(parent, style="Section.TLabelframe", padding=10), key
         )
@@ -226,6 +241,8 @@ class FittingFactoryApp:
         variable: tk.StringVar,
         values: list[str] | None = None,
     ) -> ttk.Combobox:
+        """创建带本地化标签的下拉选择行。"""
+
         label = self.localizer.bind(ttk.Label(parent), label_key)
         label.grid(row=row, column=0, sticky="w", pady=3)
         combo = ttk.Combobox(
@@ -238,6 +255,8 @@ class FittingFactoryApp:
         return combo
 
     def _build_file_section(self, parent: ttk.Frame) -> None:
+        """创建文件选择和文件摘要区域。"""
+
         section = self._section(parent, "section_file")
         section.pack(fill=tk.X, pady=(0, 8))
         self.localizer.bind(ttk.Button(
@@ -253,6 +272,8 @@ class FittingFactoryApp:
         ).pack(fill=tk.X, pady=(8, 0))
 
     def _build_column_section(self, parent: ttk.Frame) -> None:
+        """创建 X、Y 和误差来源选择区域。"""
+
         section = self._section(parent, "section_columns")
         section.pack(fill=tk.X, pady=(0, 8))
         section.columnconfigure(1, weight=1)
@@ -280,6 +301,8 @@ class FittingFactoryApp:
         self.error_source_combo.bind("<<ComboboxSelected>>", self._on_configuration_changed)
 
     def _build_model_section(self, parent: ttk.Frame) -> None:
+        """创建模型、阶次、公式和初始参数区域。"""
+
         section = self._section(parent, "section_model")
         section.pack(fill=tk.X, pady=(0, 8))
         section.columnconfigure(1, weight=1)
@@ -351,6 +374,8 @@ class FittingFactoryApp:
         self.fit_button.grid(row=0, column=1, sticky="ew", padx=(4, 0))
 
     def _build_result_section(self, parent: ttk.Frame) -> None:
+        """创建指标、报告和蒙特卡洛操作区域。"""
+
         section = self._section(parent, "section_result")
         section.pack(fill=tk.X)
         metrics = ttk.Frame(section)
@@ -399,12 +424,18 @@ class FittingFactoryApp:
         return "break"
 
     def _model_key(self) -> str:
+        """把模型显示文本转换为稳定的内部标识。"""
+
         return self.localizer.choice_key("model", self.model_var.get())
 
     def _error_key(self) -> str:
+        """把误差模式显示文本转换为稳定的内部标识。"""
+
         return self.localizer.choice_key("error", self.error_mode_var.get())
 
     def _selected_column(self, variable: tk.StringVar) -> str:
+        """把本地化列名还原为 CSV 中的真实列名。"""
+
         selected = variable.get()
         names_by_label = {label: name for name, label in self._column_labels_by_name.items()}
         return names_by_label.get(selected, selected)
@@ -415,6 +446,8 @@ class FittingFactoryApp:
         y_column: str | None = None,
         error_column: str | None = None,
     ) -> None:
+        """刷新列选择项，并尽量保留原有选择。"""
+
         if self.dataset is None:
             return
         self._column_labels_by_name = localized_column_labels(
@@ -505,6 +538,8 @@ class FittingFactoryApp:
         self._render_status()
 
     def _refresh_file_and_metrics_text(self) -> None:
+        """按当前语言刷新文件摘要、行数和拟合指标。"""
+
         if self.dataset is None:
             self.file_info_var.set(self.localizer.text("no_file"))
         else:
@@ -670,6 +705,8 @@ class FittingFactoryApp:
             self._invalidate_result("model_changed")
 
     def _on_configuration_changed(self, _event=None) -> None:
+        """配置变化时立即废弃旧拟合结果。"""
+
         self._invalidate_result("config_changed")
 
     def use_smart_initial_guess(self) -> None:
@@ -875,6 +912,8 @@ class FittingFactoryApp:
         return data, model_key, degree
 
     def _read_degree(self, show_message: bool = True) -> int | None:
+        """读取并校验 1～10 的多项式阶次。"""
+
         try:
             degree = int(self.degree_var.get())
         except ValueError:
@@ -888,6 +927,8 @@ class FittingFactoryApp:
         return degree
 
     def _read_parameter_values(self) -> list[float]:
+        """按界面顺序读取全部有限浮点参数。"""
+
         values: list[float] = []
         for name, entry in self.parameter_entries.items():
             try:
@@ -920,11 +961,15 @@ class FittingFactoryApp:
         self._set_status(status_key)
 
     def _set_status(self, key: str, **values) -> None:
+        """保存可重新本地化的状态键和格式参数。"""
+
         self._status_key = key
         self._status_values = values
         self._render_status()
 
     def _show_error(self, title_key: str, error: Exception) -> None:
+        """用当前界面语言显示业务异常。"""
+
         messagebox.showerror(
             self.localizer.text(title_key),
             translate_message(str(error), self.localizer.language),
@@ -932,10 +977,14 @@ class FittingFactoryApp:
         )
 
     def _render_status(self) -> None:
+        """把当前状态键渲染到状态栏。"""
+
         message = self.localizer.text(self._status_key, **self._status_values)
         self.status_var.set(self.localizer.text("status", message=message))
 
     def show_help(self) -> None:
+        """显示简要使用步骤。"""
+
         messagebox.showinfo(
             self.localizer.text("instructions"),
             self.localizer.text("help_text"),
@@ -943,6 +992,8 @@ class FittingFactoryApp:
         )
 
     def show_about(self) -> None:
+        """显示项目题目和支持的模型。"""
+
         messagebox.showinfo(
             self.localizer.text("about"),
             self.localizer.text("about_text"),

@@ -1,3 +1,4 @@
+# 本代码由 AI 辅助生成，已人工验证。
 """CSV 文件读取模块测试。"""
 
 from pathlib import Path

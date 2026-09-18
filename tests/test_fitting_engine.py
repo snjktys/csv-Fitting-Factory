@@ -1,3 +1,4 @@
+# 本代码由 AI 辅助生成，已人工验证。
 """拟合引擎和评价指标测试。"""
 
 from pathlib import Path

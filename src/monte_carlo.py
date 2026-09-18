@@ -1,3 +1,4 @@
+# 本代码由 AI 辅助生成，已人工验证。
 """用有放回重采样评估拟合参数的不确定性。"""
 
 from __future__ import annotations

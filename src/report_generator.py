@@ -1,3 +1,4 @@
+# 本代码由 AI 辅助生成，已人工验证。
 """TXT 拟合报告生成和保存。
 
 """
@@ -84,10 +85,14 @@ def suggested_report_name(dataset: DatasetInfo, result: FitResult) -> str:
 
 
 def _error_mode_text(error_mode: str) -> str:
+    """把内部误差模式转换为报告中的中文名称。"""
+
     return {"none": "无误差", "column": "CSV 误差列", "constant": "统一误差值"}.get(error_mode, error_mode)
 
 
 def _error_source_text(data: CleanedData) -> str:
+    """说明报告所用误差数据的具体来源。"""
+
     if data.error_mode == "column":
         return data.sigma_column or "未指定"
     if data.error_mode == "constant":

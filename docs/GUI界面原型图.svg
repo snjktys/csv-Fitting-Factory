@@ -54,6 +54,7 @@
   <rect x="190" y="414" width="278" height="36" rx="6" class="input"/>
   <text x="206" y="437" class="small">无 / CSV误差列 / 统一误差值</text>
   <path d="M444 428 l8 8 8-8" fill="none" stroke="#66758a" stroke-width="2"/>
+  <text x="96" y="460" class="small">数据预览按钮在导入 CSV 后启用</text>
   <line x1="96" y1="470" x2="468" y2="470" stroke="#dce3ec"/>
 
   <text x="96" y="502" class="section">3  拟合模型与参数</text>
@@ -65,7 +66,7 @@
   <rect x="190" y="562" width="92" height="36" rx="6" class="input"/>
   <text x="206" y="585" class="small">2</text>
   <text x="300" y="584" class="small">1～10；6阶以上提示风险</text>
-  <text x="96" y="630" class="text">参数</text>
+  <text x="96" y="630" class="text">公式 / 参数</text>
   <rect x="190" y="608" width="278" height="72" rx="6" class="input"/>
   <text x="206" y="633" class="small">a0: 0.0　a1: 1.0</text>
   <text x="206" y="659" class="small">按所选模型动态生成</text>
@@ -76,10 +77,12 @@
   <line x1="96" y1="760" x2="468" y2="760" stroke="#dce3ec"/>
 
   <text x="96" y="792" class="section">4  拟合结果</text>
-  <text x="96" y="824" class="text">R²：--</text>
-  <text x="245" y="824" class="text">RMSE：--</text>
-  <rect x="344" y="790" width="124" height="42" rx="7" fill="#7d68ae"/>
-  <text x="406" y="817" text-anchor="middle" class="button">生成报告</text>
+  <text x="96" y="830" class="text">R²：--</text>
+  <text x="225" y="830" class="text">RMSE：--</text>
+  <rect x="344" y="780" width="124" height="30" rx="7" fill="#7d68ae"/>
+  <text x="406" y="801" text-anchor="middle" class="button">生成报告</text>
+  <rect x="344" y="818" width="124" height="30" rx="7" fill="#4776b8"/>
+  <text x="406" y="839" text-anchor="middle" class="small">蒙特卡洛（1000次）</text>
 
   <text x="542" y="202" class="section">拟合结果图</text>
   <rect x="542" y="220" width="856" height="362" rx="8" fill="#fcfdff" stroke="#cad3df"/>

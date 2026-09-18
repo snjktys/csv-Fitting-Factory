@@ -1,3 +1,4 @@
+# 本代码由 AI 辅助生成，已人工验证。
 """GUI 中使用的 Matplotlib 双语工具栏组件。"""
 
 from __future__ import annotations
@@ -44,6 +45,8 @@ class LocalizedSubplotTool(widgets.SubplotTool):
     parameter_names = ("left", "bottom", "right", "top", "wspace", "hspace")
 
     def __init__(self, targetfig: Figure, toolfig: Figure, language: str) -> None:
+        """初始化滑块，并把可见文本切换为指定语言。"""
+
         super().__init__(targetfig, toolfig)
         texts = SUBPLOT_TEXTS[language]
         toolfig.suptitle(texts["title"])
@@ -52,6 +55,8 @@ class LocalizedSubplotTool(widgets.SubplotTool):
         self.buttonreset.label.set_text(texts["reset"])
 
     def _on_slider_changed(self, _) -> None:
+        """把六个滑块值映射到 Matplotlib 的布局参数。"""
+
         self.targetfig.subplots_adjust(
             **dict(zip(self.parameter_names, (s.val for s in self._sliders), strict=True))
         )
@@ -63,11 +68,15 @@ class LocalizedNavigationToolbar2Tk(NavigationToolbar2Tk):
     """根据当前语言显示工具提示和子图配置窗口。"""
 
     def __init__(self, canvas, window=None, *, language="zh", pack_toolbar=True):
+        """使用指定语言的工具栏项目初始化组件。"""
+
         self.language = language
         self.toolitems = TOOLBAR_ITEMS[language]
         super().__init__(canvas, window, pack_toolbar=pack_toolbar)
 
     def configure_subplots(self, *args):
+        """打开或激活本地化的子图布局窗口。"""
+
         if hasattr(self, "subplot_tool"):
             self.subplot_tool.figure.canvas.manager.show()
             return self.subplot_tool
@@ -84,6 +93,8 @@ class LocalizedNavigationToolbar2Tk(NavigationToolbar2Tk):
         )
 
         def on_tool_fig_close(_event) -> None:
+            """清理布局窗口与主画布之间的事件连接。"""
+
             self.canvas.mpl_disconnect(connection_id)
             del self.subplot_tool
 
